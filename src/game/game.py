@@ -3,6 +3,9 @@
 # (Start)
 #---------------
 
+
+# Native modules
+
 # Python clock say use time.clock for benchmarking.
 # NOTE: Implemented differently on each system.
 # https://stackoverflow.com/questions/156330/get-timer-ticks-in-python
@@ -10,6 +13,9 @@ import time
 
 # This is windows specific
 import msvcrt
+
+# Custom modules
+import drawEngine
 
 #---------------
 # Imports 
@@ -24,6 +30,9 @@ class Game(object):
         # Member Variables
         # (Start)
         #--------------------
+        
+        # TEMP
+        self.posx = 0
         
         # Do not update if less than frame count update
         #
@@ -40,6 +49,9 @@ class Game(object):
         self.startTime = 0.0
         self.lastTime = 0.0
         
+        self.drawArea = drawEngine.DrawEngine()
+        
+        
         #--------------------
         # Member Variables
         # (End)
@@ -47,6 +59,8 @@ class Game(object):
 
     def run(self):
 
+        self.drawArea.createSprite(0, "$")
+        
         self.key = " "
         
         # https://stackoverflow.com/questions/85451/
@@ -63,12 +77,15 @@ class Game(object):
         # not.
         self.startTime = time.perf_counter()
         self.frameCount = 0
+        self.lastTime = 0
+        
+        self.posx = 0
         
         while self.key != 'q':
             while self.getInput() == False:
                 self.timerUpdate()
                 
-            print("Here's what you pressed: {}".format(self.key))
+            #print( "Here's what you pressed: {}".format(self.key))
             
         # Print out information when we quit the game loop
         fps = self.frameCount / (time.perf_counter() - self.startTime)
@@ -88,12 +105,15 @@ class Game(object):
         # TODO: Find equivalent in Python
         if msvcrt.kbhit():
             
-            # msvcrt.getch() returns a byte literal.
-            # Must decode to utf-8
-            # https://stackoverflow.com/questions/41918836/
-            # how-do-i-get-rid-of-the-b-prefix-in-a-string-in-python/41918864
-            self.key = msvcrt.getch().decode('utf-8')
-            return True
+            try:
+                # msvcrt.getch() returns a byte literal.
+                # Must decode to utf-8
+                # https://stackoverflow.com/questions/41918836/
+                # how-do-i-get-rid-of-the-b-prefix-in-a-string-in-python/41918864
+                self.key = msvcrt.getch().decode('utf-8')
+                return True
+            except:
+                return False
             
         return False
     
@@ -104,6 +124,9 @@ class Game(object):
         if self.currentTime < self.game_speed:
             return
         
+        self.drawArea.eraseSprite(self.posx, 5)
+        self.posx = (self.posx + 1) % 80
+        self.drawArea.drawSprite(0, self.posx, 5)
+        
         self.frameCount += 1
         self.lastTime = time.perf_counter()
-        
