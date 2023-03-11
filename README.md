@@ -198,3 +198,13 @@ git log --graph --decorate --oneline
 - [Git Graph Visualizes Branches in VS Code for Free](https://ardalis.com/git-graph-visualizes-branches-in-vs-code-for-free/)
     - [Git Graph](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph)
     - [GitLens](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)
+
+- The git merge Command
+    - https://www.delftstack.com/howto/git/git-merge-branch-into-another-branch/
+
+    - Run the `git status` command. This will point the HEAD to the recipient branch.
+
+    - Switch to the recipient branch using the git checkout <recipient branch>` command.
+
+    - Update your master branch with the latest remote commits using the git fetch and git pull commands.
+    Merge the branches by running the `git merge <your branch name here>` command.
