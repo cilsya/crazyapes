@@ -2,7 +2,10 @@
 # https://www.programcreek.com/python/example/104587/win32api.GetStdHandle
 #import win32api as api, win32process as proc
 import ctypes
+import os
 import win32api
+import win32gui
+
 #-------------------------------------------------------------------------------
 
 #https://github.com/theinternetftw/xyppy/blob/
@@ -65,3 +68,45 @@ def set_console_cursor_position(x, y):
         cursor.Y = y
         ctypes.windll.kernel32.SetConsoleCursorPosition(stdout_handle,
                                                         cursor)
+
+def clear_row(row=1):
+    
+    # https://www.geeksforgeeks.org/python-os-get_terminal_size-method/\
+    # Get the size of the terminal
+    #
+    # I believe this is a tuple.
+    # width: size_of_terminal[0]
+    # height: size_of_terminal[1]
+    size_of_terminal = os.get_terminal_size()
+    
+    # This is how many characters are across in the console
+    #row_width = 80
+    row_width = size_of_terminal[0]
+    
+    for i in range(0, row_width + 1 ):
+       # Place the cursor at the first x position of the decided row
+       set_console_cursor_position(i, row)
+        
+       # Clear that character
+       # NOTE: Do NOT do a carriage return (go to newline). So sent
+       #      end="" instead of end="\n" (for windows)
+       #
+       # NOTE2: Flush right away to dump what is in the bufffer as if it is 
+       #        streaming flush=True (for python 3, it was sys.stdout.flush()
+       #        in python 2)
+       #
+       print(" ",
+             end="",
+             flush=True)
+       
+def clear_row_range(row_range=[0, 5]):
+    """
+    NOTE: The first number in list is inclusive, the last number in list
+          is exclusive
+    """
+    row_start = row_range[0]
+    row_end = row_range[1]
+    
+    for i in range(row_start, row_end):
+        clear_row(row=i)
+    

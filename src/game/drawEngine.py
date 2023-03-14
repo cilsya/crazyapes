@@ -84,3 +84,11 @@ class DrawEngine(object):
     def cursorVisibility(self,
                         visibility):
         utilities.set_console_cursor_visibility(visibility)
+        
+    def clear_row(self,
+                  row=1):
+        utilities.clear_row(row=row)
+        
+    def clear_row_range(self,
+                        row_range=[0, 5]):
+        utilities.clear_row_range(row_range=row_range)

@@ -1,11 +1,33 @@
 import drawEngine
 
 class Enum(object):
-    SPRITE_CLASSID = None
+    #------------------
+    # Static Member variables
+    # (Start)
+    #------------------
+    
+    SPRITE_CLASSID = 0
+    CHARACTER_CLASSID = 1
+    
+    #------------------
+    # Static Member variables
+    # (End)
+    #------------------
 
 class vector(object):
+    
+    #------------------
+    # Static Member variables
+    # (Start)
+    #------------------
+    
     x = None
     y = None
+    
+    #------------------
+    # Static Member variables
+    # (End)
+    #------------------
 
 class Sprite(object):
     

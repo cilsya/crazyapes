@@ -15,8 +15,8 @@ import time
 import msvcrt
 
 # Custom modules
+import character
 import drawEngine
-import sprite
 
 #---------------
 # Imports 
@@ -60,9 +60,14 @@ class Game(object):
 
     def run(self):
 
+        # Clear Row of any writing in the console like the folder path
+        #self.drawArea.clear_row(row=1)
+        self.drawArea.clear_row_range(row_range=[0, 5])
+        self.drawArea.gotoxy(0,0)
+        
         self.drawArea.createSprite(0, "$")
         
-        self.player = sprite.Sprite(self.drawArea, 0)
+        self.player = character.Character(self.drawArea, 0)
         
         self.key = " "
         
@@ -89,7 +94,7 @@ class Game(object):
                 self.timerUpdate()
                 
             #print( "Here's what you pressed: {}".format(self.key))
-            
+            self.player.keyPress(self.key)
             
         # NOTE: This is supposed to mimic deleting an object in C++ when
         #       you use the "new" keyword in C++. This would instantiate an 
@@ -135,8 +140,6 @@ class Game(object):
 
         if self.currentTime < self.game_speed:
             return
-        
-        self.player.move(1, 1)
         
         #self.drawArea.eraseSprite(self.posx, 5)
         #self.posx = (self.posx + 1) % 80
