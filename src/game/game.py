@@ -16,6 +16,7 @@ import msvcrt
 
 # Custom modules
 import drawEngine
+import sprite
 
 #---------------
 # Imports 
@@ -50,7 +51,7 @@ class Game(object):
         self.lastTime = 0.0
         
         self.drawArea = drawEngine.DrawEngine()
-        
+        self.player = None
         
         #--------------------
         # Member Variables
@@ -60,6 +61,8 @@ class Game(object):
     def run(self):
 
         self.drawArea.createSprite(0, "$")
+        
+        self.player = sprite.Sprite(self.drawArea, 0)
         
         self.key = " "
         
@@ -87,6 +90,15 @@ class Game(object):
                 
             #print( "Here's what you pressed: {}".format(self.key))
             
+            
+        # NOTE: This is supposed to mimic deleting an object in C++ when
+        #       you use the "new" keyword in C++. This would instantiate an 
+        #       object from class. You would normally have to delete it 
+        #       yourself to prevent memory leaks.
+        #
+        #       in Python, there is garbage collection
+        self.player = None
+        
         # Print out information when we quit the game loop
         fps = self.frameCount / (time.perf_counter() - self.startTime)
         print("{} fps".format(fps))
@@ -124,9 +136,11 @@ class Game(object):
         if self.currentTime < self.game_speed:
             return
         
-        self.drawArea.eraseSprite(self.posx, 5)
-        self.posx = (self.posx + 1) % 80
-        self.drawArea.drawSprite(0, self.posx, 5)
+        self.player.move(1, 1)
+        
+        #self.drawArea.eraseSprite(self.posx, 5)
+        #self.posx = (self.posx + 1) % 80
+        #self.drawArea.drawSprite(0, self.posx, 5)
         
         self.frameCount += 1
         self.lastTime = time.perf_counter()
