@@ -1,5 +1,6 @@
 import drawEngine
 import sprite
+import sprite_data
 
 class Character(sprite.Sprite):
     
@@ -37,7 +38,7 @@ class Character(sprite.Sprite):
         self.leftKey = left_key
         self.rightKey = right_key
         
-        self.classID = sprite.Enum.CHARACTER_CLASSID
+        self.classID = sprite_data.Enum.CHARACTER_CLASSID
         
         #------------------
         # Member variables
