@@ -14,6 +14,9 @@ class DrawEngine(object):
         self.screenWidth = xSize
         self.screenHeight = ySize
         self.spriteImage = [None] * 16
+        self.tileImage = [None]*16
+        self.map = None
+        
         
         #-----------------
         # Member variables
@@ -31,6 +34,9 @@ class DrawEngine(object):
         ## DEBUG
         ##
         #print("DEBUG - Destructor called")
+        
+        # Put cursor at the end
+        #self.gotoxy(0, self.screenHeight)
     
     def createSprite( self,
                       index,
@@ -92,3 +98,32 @@ class DrawEngine(object):
     def clear_row_range(self,
                         row_range=[0, 5]):
         utilities.clear_row_range(row_range=row_range)
+        
+    def setMap(self,
+               data):
+        self.map = data
+
+    def createBackgroundTile(self,
+                             index,
+                             c):
+        if ( index >= 0
+             and
+             index < 16):
+            self.tileImage[index] = c
+
+    def drawBackground(self):
+        
+        # Make sure map is set, meaning not None
+        if self.map is not None:
+            
+            # Looping row by row, but our data is set column by column
+            # So do a loop down the y coordinates then by the x coordinates
+            for y in range(self.screenHeight):
+                
+                # Make sure we go to the correct location
+                self.gotoxy(0, y)
+                
+                for x in range(self.screenWidth):
+                    print(self.tileImage[self.map[x][y]],
+                         end="",
+                         flush=True)

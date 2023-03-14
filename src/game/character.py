@@ -4,7 +4,12 @@ import sprite
 class Character(sprite.Sprite):
     
     def __init__(self,
-                 de, 
+                 # Level
+                 lvl,
+                 
+                 # Draw Engine
+                 de,
+                 
                  s_index,
                  x=1,
                  y=1,
@@ -13,8 +18,10 @@ class Character(sprite.Sprite):
                  down_key="s",
                  left_key="a",
                  right_key="d"):
-    
-        super(Character, self).__init__(de,
+        
+        # Call the constructor of the parent class
+        super(Character, self).__init__(lvl,
+                                        de,
                                         s_index,
                                         x,
                                         y,

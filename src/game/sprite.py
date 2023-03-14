@@ -1,4 +1,5 @@
 import drawEngine
+import level
 
 class Enum(object):
     #------------------
@@ -33,8 +34,12 @@ class Sprite(object):
     
     def __init__( self,
                   
+                  # Level
+                  l,
+                  
                   # DrawEngine
                   de,
+                  
                   s_index,
                   x = 1,
                   y = 1,
@@ -59,6 +64,8 @@ class Sprite(object):
         self.numLives = i_lives
         
         self.classID = Enum.SPRITE_CLASSID
+        
+        self.level = l
         
         #------------------
         # Member variables
@@ -92,21 +99,31 @@ class Sprite(object):
         
     def move(self, x, y):
         
-        # Erase Sprite
-        self.erase(self.pos.x,
-                   self.pos.y)
+        # This is the position I intend to move.
+        # Check if it is valid
+        xpos = int(self.pos.x + x)
+        ypos = int(self.pos.y + y)
         
-        self.pos.x += x
-        self.pos.y += y
+        if(self.isValidLevelMove(xpos, ypos)):
         
-        self.facingDirection.x = x;
-        self.facingDirection.y = y;
-        
-        # Draw Sprite
-        self.draw(self.pos.x,
-                  self.pos.y)
-        
-        return True
+            # Erase Sprite
+            self.erase(self.pos.x,
+                       self.pos.y)
+            
+            self.pos.x += x
+            self.pos.y += y
+            
+            self.facingDirection.x = x;
+            self.facingDirection.y = y;
+            
+            # Draw Sprite
+            self.draw(self.pos.x,
+                      self.pos.y)
+            
+            return True
+            
+        # If we made it this far, we failed to pass validation
+        return False
 
     def draw(self, x, y):
         self.drawArea.drawSprite(self.spriteIndex,
@@ -115,4 +132,14 @@ class Sprite(object):
     
     def erase(self, x,y):
         self.drawArea.eraseSprite(int(x), int(y))
+    
+    def isValidLevelMove(self, xpos, ypos):
+        """
+        Check if we are inside level
+        Check to make sure where we are moving to is not a wall tile.
+        """
+        if self.level.level[xpos][ypos] != level.Enum.TILE_WALL:
+            return True
+            
+        return False
         
