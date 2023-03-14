@@ -87,14 +87,27 @@ class DrawEngine(object):
                 y):
         utilities.set_console_cursor_position(x, y)
 
+    def get_cursor_position(self):
+        """
+        Retrieves information about the global cursor.
+        https://stackoverflow.com/questions/3698635/
+        getting-cursor-position-in-python
+        http://msdn.microsoft.com/en-us/library/ms648389(VS.85).aspx
+        http://msdn.microsoft.com/en-us/library/ms648390(VS.85).aspx
+        """
+        return utilities.get_console_cursor_position()
+
     def cursorVisibility(self,
                         visibility):
         utilities.set_console_cursor_visibility(visibility)
         
+    def clear_screen(self):
+        utilities.clear_screen()
+     
     def clear_row(self,
                   row=1):
         utilities.clear_row(row=row)
-        
+    
     def clear_row_range(self,
                         row_range=[0, 5]):
         utilities.clear_row_range(row_range=row_range)

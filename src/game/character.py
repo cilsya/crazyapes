@@ -1,5 +1,6 @@
 import drawEngine
 import sprite
+import sprite_data
 
 class Character(sprite.Sprite):
     
@@ -37,7 +38,7 @@ class Character(sprite.Sprite):
         self.leftKey = left_key
         self.rightKey = right_key
         
-        self.classID = sprite.Enum.CHARACTER_CLASSID
+        self.classID = sprite_data.Enum.CHARACTER_CLASSID
         
         #------------------
         # Member variables
@@ -51,11 +52,23 @@ class Character(sprite.Sprite):
             
         elif c == self.downKey:
             return self.move(0, 1)
-            
+        
         elif c == self.rightKey:
             return self.move(1, 0)
-            
+        
         elif c == self.leftKey:
             return self.move(-1, 0)
-            
+        
         return False
+        
+    def addLives(self,
+                 num):
+        self.numLives += num
+        
+        # The character died (lost a life by adding -1 to its lives).
+        # Reset the starting position of the character.
+        if self.isAlive():
+            
+            self.pos.x = 1
+            self.pos.y = 1
+            self.move(0, 0)

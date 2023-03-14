@@ -18,6 +18,8 @@ import msvcrt
 import character
 import drawEngine
 import level
+import level_data
+import mage
 
 #---------------
 # Imports 
@@ -40,7 +42,8 @@ class Game(object):
         #       If we want to run at about 30 frames per second, 
         #       1000/30 = 33.333 #THIS IS MILLISECONDS
         #       0.033333
-        self.game_speed = 0.033333
+        #self.game_speed = 0.033333
+        self.game_speed = 0.5
         
         self.key = " "
         self.frameCount = 0.0
@@ -62,7 +65,8 @@ class Game(object):
 
         # Clear Row of any writing in the console like the folder path
         #self.drawArea.clear_row(row=1)
-        self.drawArea.clear_row_range(row_range=[0, 5])
+        #self.drawArea.clear_row_range(row_range=[0, 5])
+        self.drawArea.clear_screen()
         self.drawArea.gotoxy(0,0)
         
         level_width = 30
@@ -71,17 +75,27 @@ class Game(object):
                                  width = level_width,
                                  height = level_height)
         
-        self.drawArea.createBackgroundTile(level.Enum.TILE_EMPTY,
+        self.drawArea.createBackgroundTile(level_data.Enum.TILE_EMPTY,
                                            " ")
-        self.drawArea.createBackgroundTile(level.Enum.TILE_WALL,
-                                           "+")
+        self.drawArea.createBackgroundTile(level_data.Enum.TILE_WALL,
+                                          "+")
         
-        self.drawArea.createSprite(0, "$")
-        self.player = character.Character(self.level, self.drawArea, 0)
+        # ASCII character codes
+        #self.drawArea.createBackgroundTile(level_data.Enum.TILE_WALL,
+        #                                   chr(219))
+        
+        self.drawArea.createSprite(level_data.Enum_Entity.SPRITE_PLAYER,
+                                   "o")
+        self.drawArea.createSprite(level_data.Enum_Entity.SPRITE_ENEMY,
+                                   "$")
+        self.drawArea.createSprite(level_data.Enum_Entity.SPRITE_FIREBALL,
+                                   "*")
+        self.player = mage.Mage(self.level, self.drawArea, 0)
         
         # Only need to draw the level once
         self.level.draw()
         self.level.addPlayer(self.player)
+        self.level.addEnemies(3)
         
         # Player keyboard button that was pressed
         self.key = " "
@@ -115,6 +129,11 @@ class Game(object):
                 
             self.level.keyPress(self.key)
 
+        #-----------------------------------------------------------------------
+        # Main Game Loop
+        # (END)
+        #-----------------------------------------------------------------------
+
         # Clear everything
         self.drawArea.clear_row_range(row_range=[0, level_height])
 
@@ -132,9 +151,12 @@ class Game(object):
         
         # Print out information when we quit the game loop
         #
-        # Put cursor a few levels down
+        # Put cursor a few rows down
+        #self.drawArea.clear_screen()
         self.drawArea.gotoxy(0,7)
         
+        tuple_cursor_position = self.drawArea.get_cursor_position()
+        print("Current cursor position: {}".format(tuple_cursor_position))
         fps = self.frameCount / (time.perf_counter() - self.startTime)
         print("{} fps".format(fps))
         print("{} seconds".format(time.perf_counter() - self.startTime))
@@ -170,6 +192,9 @@ class Game(object):
         
         if self.currentTime < self.game_speed:
             return
+        
+        # Update the level
+        self.level.update()
         
         self.frameCount += 1
         self.lastTime = time.perf_counter()

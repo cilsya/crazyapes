@@ -39,6 +39,10 @@ class CONSOLE_CURSOR_INFO(ctypes.Structure):
 
 #-------------------------------------------------------------------------------
 
+def get_console_cursor_position():
+    flags, hcursor, (x,y) = win32gui.GetCursorInfo()
+    return (x, y)
+
 def set_console_cursor_visibility(visibility):
         """
         https://stackoverflow.com/questions/12549921/
@@ -109,4 +113,9 @@ def clear_row_range(row_range=[0, 5]):
     
     for i in range(row_start, row_end):
         clear_row(row=i)
+        
+def clear_screen():
+    
+    # For Windows
+    os.system("cls")
     
