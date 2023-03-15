@@ -46,10 +46,12 @@ class Sprite(object):
     
     def __del__(self):
         
-        ## erase the dying sprite
-        #self.erase(self.pos.x,
-        #           self.pos.y)
-        pass
+        try:
+            ## erase the dying sprite
+            self.erase(self.pos.x,
+                      self.pos.y)
+        except:
+            pass
         
         
     def getPosition(self):

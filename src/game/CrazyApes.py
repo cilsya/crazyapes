@@ -30,6 +30,8 @@ class ID_list(object):
     ID_About = 402
     ID_Exit = 403
     
+    ID_Timer = 404
+    
     #-------------------------
     # Static Member Variables
     # (End)
@@ -52,9 +54,13 @@ class CrazyApesFrame(wx.Frame):
         # (Start)
         #---------------------------
         
-        # TEMP
-        #
-        self.TEMP_on_paint_count = 0
+        ## TEMP
+        ##
+        #self.TEMP_on_paint_count = 0
+        
+        # https://wxpython.org/Phoenix/docs/html/wx.Timer.html
+        self.timer = wx.Timer( self, 
+                               ID_list.ID_Timer)
         
         #self.level = None
         #self.player = None
@@ -251,6 +257,10 @@ class CrazyApesFrame(wx.Frame):
                                  define_data.LEVEL_X,
                                  define_data.LEVEL_Y)
         
+        # Start the timer
+        # Pass it a number in milliseconds between delay
+        self.timer.Start(define_data.UPDATE_TIME)
+        
         # Create a new lvel
         self.level = level.Level( self.drawArea,
                                   define_data.LEVEL_X,
@@ -299,8 +309,17 @@ class CrazyApesFrame(wx.Frame):
         #self.Bind(wx.EVT_PAINT,
         #          self.OnPaint)
         
+        # Bind paint event to game window
         self.gameWindow.Bind(wx.EVT_PAINT,
                              self.OnPaint)
+        
+        # Bind timer event to wxTimer object
+        self.Bind(wx.EVT_TIMER, 
+                  self.OnTimer)
+        
+        # Connect keyboard event
+        self.gameWindow.Bind(wx.EVT_KEY_DOWN,
+                             self.OnKey)
         
     def OnNew(self, event):
         pass
@@ -314,25 +333,25 @@ class CrazyApesFrame(wx.Frame):
         wx.MessageBox("The Crazy Apes game. Can you survive?",
                       "About Crazy Apes")
         
-        # DEBUG
-        #
-        # wxPython not binding callbacks to events properly
-        #
-        # https://stackoverflow.com/questions/4242147/
-        # wxpython-not-binding-callbacks-to-events-properly/4242889#4242889
-        print("DEBUG - Menu Item Selected: {}".format(
-                self.menuFile.FindItemById(event.Id).Label) )
+        ## DEBUG
+        ##
+        ## wxPython not binding callbacks to events properly
+        ##
+        ## https://stackoverflow.com/questions/4242147/
+        ## wxpython-not-binding-callbacks-to-events-properly/4242889#4242889
+        #print("DEBUG - Menu Item Selected: {}".format(
+        #        self.menuFile.FindItemById(event.Id).Label) )
     
     def OnExit(self, event):
         pass
     
     def OnPaint(self, event):
         
-        # DEBUG
-        #
-        self.TEMP_on_paint_count += 1
-        text = "Number of paint events: {0}".format(self.TEMP_on_paint_count)
-        print("DEBUG - {}".format(text))
+        ## DEBUG
+        ##
+        #self.TEMP_on_paint_count += 1
+        #text = "Number of paint events: {0}".format(self.TEMP_on_paint_count)
+        #print("DEBUG - {}".format(text))
 
         
         
@@ -363,7 +382,64 @@ class CrazyApesFrame(wx.Frame):
         dc.DrawBitmap( self.backBuffer,
                       wx.Point(0,0) )
         
-    
+    def OnTimer(self, event):
+        
+        # Update the level
+        self.level.update()
+        
+        # Update the viewing area
+        #----------------------------------
+        
+        # Cannot use a wxPaintDC, must use a wxClientDC when it is outside
+        # an onPaint event handler
+        #
+        # https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
+        area = wx.ClientDC(self.gameWindow)
+        
+        area.DrawBitmap( self.backBuffer,
+                         wx.Point(0,0) )
+        
+    def OnKey(self, event):
+        
+        # Only 1 bit difference between a lower-case character and a 
+        # upper case character by "OR"'ing it (using "|") we ensure that 
+        # 1 bit is always 1.
+        # It will always ensure it is lower case.
+        #self.keyPress(event.GetKeyCode() | 32)
+        #
+        result = event.GetKeyCode()
+        #
+        # Always get lower case
+        result_bit = result | 32
+        #
+        # Convert ascii code to letter
+        result_letter = chr(result)
+        #
+        # Convert to lower case
+        result_letter_bit = chr(result_bit)
+        #
+        self.level.keyPress(result_letter_bit)
+        
+        ## DEBUG
+        ##
+        #print("DEBUG - OnKey callback. event.GetKeyCode(): {}".format(result))
+        #print("DEBUG - OnKey callback. event.GetKeyCode() with bit: {}".format(
+        #                                                            result_bit))
+        #print("DEBUG - OnKey callback. letter: {}".format(result_letter))
+        #print("DEBUG - OnKey callback. result_letter_bit with bit: {}".format(
+        #                                                    result_letter_bit))
+        # Update the viewing area
+        #----------------------------------
+        
+        # Cannot use a wxPaintDC, must use a wxClientDC when it is outside
+        # an onPaint event handler
+        #
+        # https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
+        area = wx.ClientDC(self.gameWindow)
+        
+        area.DrawBitmap( self.backBuffer,
+                         wx.Point(0,0) )
+        
 class CrazyApesPanel(wx.Panel):
     """
     Description: This is the panel that goes into the main apps frame.
