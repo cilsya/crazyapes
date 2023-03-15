@@ -4,6 +4,8 @@
 #------------------------ Imports (Start) --------------------------------------
 
 # Native modules
+import math
+import time
 
 # Third-party modules
 import wx
@@ -61,7 +63,7 @@ class CrazyApesFrame(wx.Frame):
         super(CrazyApesFrame, self).__init__( parent,
                                               title = title,
                                               pos = (100, 100),
-                                              size = (650, 500) )
+                                              size = (900, 500) )
         
         #---------------------------
         # Game variables
@@ -76,6 +78,8 @@ class CrazyApesFrame(wx.Frame):
         self.gameState = None
         self.backBuffer = None
         
+        
+        
         # https://wxpython.org/Phoenix/docs/html/wx.Timer.html
         self.timer = wx.Timer( self, 
                                ID_list.ID_Timer)
@@ -83,6 +87,9 @@ class CrazyApesFrame(wx.Frame):
         self.level = None
         self.player = None
         self.drawArea = drawEngine.DrawEngine()
+        
+        # Elapsed time values
+        self.time_initial = 0.0
         
         #---------------------------
         # Game variables
@@ -264,6 +271,8 @@ class CrazyApesFrame(wx.Frame):
         # Pass it a number in milliseconds between delay
         self.timer.Start(define_data.UPDATE_TIME)
         
+        
+        
         self.gameState = level_data.Enum_GameState.STATE_NULL
         
         #-----------------------------------------
@@ -350,7 +359,7 @@ class CrazyApesFrame(wx.Frame):
         self.level.draw()
 
         # Add enemies
-        self.level.addEnemies(3)
+        self.level.addEnemies(1, 5)
         
         # Set the level to 1.
         # It is the first level because it is a new game.
@@ -416,7 +425,7 @@ class CrazyApesFrame(wx.Frame):
         self.updateView()
         
     def OnTimer(self, event):
-        
+                                        
         if self.gameState == level_data.Enum_GameState.STATE_GAME_IN_PROGRESS:
             self.updateGame()
         
@@ -554,9 +563,16 @@ class CrazyApesFrame(wx.Frame):
             # Cap max amount of enemies to 15
             if numEnemies > 15:
                 numEnemies = 15
-                
+            
+            # Basic algorithm to make enemies faster
+            newSpeed = math.pow(2, self.currentLevel)
+            #
+            # Clamp new speed
+            if newSpeed > 100:
+                newSpeed = 100
+            
             # Add enemies
-            self.level.addEnemies(numEnemies)
+            self.level.addEnemies(numEnemies, newSpeed)
             
             self.level.setPlayerStart()
             
@@ -582,10 +598,28 @@ class CrazyApesFrame(wx.Frame):
             ##
             #print("DEBUG - updateGame callback. Playing Game.")
             
+            # Measured in seconds, multiply by 1000.0
+            # to make it milliseconds and type float
+            time_elasped = self.get_elasped_time() * 1000.0
+            
+            ## DEBUG
+            ##
+            #print("DEBUG - self.updateGame() time_elasped: {}".format(
+            #                                                    time_elasped))
+            
             # Just update the level
-            self.level.update()
+            self.level.update(time_elasped)
             
         self.updateView()
+        
+    def start_timer(self):
+        
+        # https://docs.python.org/3/library/time.html#time.process_time
+        # Measured in seconds (fractional seconds)
+        self.time_initial = time.perf_counter()
+        
+    def get_elasped_time(self):
+        return time.perf_counter() - self.time_initial
     
 class CrazyApesPanel(wx.Panel):
     """
