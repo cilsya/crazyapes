@@ -140,3 +140,7 @@ class Sprite(object):
         # draw sprite
         self.draw(self.pos.x, self.pos.y)
         
+    def setLevel(self,
+                 level):
+        self.level = level
+        

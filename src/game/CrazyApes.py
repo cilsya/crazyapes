@@ -36,6 +36,20 @@ class ID_list(object):
     # Static Member Variables
     # (End)
     #-------------------------
+    
+class LevelType(object):
+    
+    #-------------------------
+    # Static Member Variables
+    # (Start)
+    #-------------------------
+    
+    RANDOM_NEW_LEVEL = 0
+    
+    #-------------------------
+    # Static Member Variables
+    # (End)
+    #-------------------------
 
 class CrazyApesFrame(wx.Frame):
     """
@@ -58,23 +72,17 @@ class CrazyApesFrame(wx.Frame):
         ##
         #self.TEMP_on_paint_count = 0
         
+        self.currentLevel = None
+        self.gameState = None
+        self.backBuffer = None
+        
         # https://wxpython.org/Phoenix/docs/html/wx.Timer.html
         self.timer = wx.Timer( self, 
                                ID_list.ID_Timer)
         
-        #self.level = None
-        #self.player = None
+        self.level = None
+        self.player = None
         self.drawArea = drawEngine.DrawEngine()
-        
-        # Back-buffer
-        # wxBitmap
-        # https://wxpython.org/Phoenix/docs/html/wx.Bitmap.html
-        #
-        # Draw everything onto the back buffer, when it is done, flip it onto
-        # the screen. It prevents flickering.
-        self.backBuffer = wx.Bitmap(
-            define_data.LEVEL_X * define_data.GRID_SIZE,
-            define_data.LEVEL_Y * define_data.GRID_SIZE )
         
         #---------------------------
         # Game variables
@@ -93,13 +101,13 @@ class CrazyApesFrame(wx.Frame):
         self.menuFile = wx.Menu()
         
         # Populate menu file
-        self.menuFile.Append(ID_list.ID_New, "&New")
+        self.menuFile_new = self.menuFile.Append(ID_list.ID_New, "&New")
         self.menuFile.AppendSeparator()
         self.menuFile.Append(ID_list.ID_Load, "&Load")
         self.menuFile.AppendSeparator()
         self.menuFile_about = self.menuFile.Append(ID_list.ID_About, "&About")
         self.menuFile.AppendSeparator()
-        self.menuFile.Append(ID_list.ID_Exit, "E&xit")
+        self.menuFile_exit = self.menuFile.Append(ID_list.ID_Exit, "E&xit")
         
         # Put menu file to the menu bar
         self.menu_bar.Append(self.menuFile, "&File")
@@ -252,44 +260,16 @@ class CrazyApesFrame(wx.Frame):
         # (End)
         #-------------------------
         
-        # Set the member variables for the draw engine
-        self.drawArea.setWindow( self.backBuffer,
-                                 define_data.LEVEL_X,
-                                 define_data.LEVEL_Y)
-        
         # Start the timer
         # Pass it a number in milliseconds between delay
         self.timer.Start(define_data.UPDATE_TIME)
         
-        # Create a new lvel
-        self.level = level.Level( self.drawArea,
-                                  define_data.LEVEL_X,
-                                  define_data.LEVEL_Y)
+        self.gameState = level_data.Enum_GameState.STATE_NULL
         
-        # Create a new player
-        self.player = mage.Mage( self.level,
-                                 self.drawArea,
-                                 0)
-        
-        
-        # Draw level
-        # NOTE: Just by calling this, the user won't see anything.
-        #       The reason is this is calling the self.drawArea (which is
-        #       a draw engine) and it is drawing to the backbuffer.
-        self.level.draw()
-        #
-        # Add player
-        self.level.addPlayer(self.player)
-        #
-        # Add enemies
-        self.level.addEnemies(3)
-        
-        # NEW METHOD CREATED, update backend code
-        self.level.setPlayerStart()
-        
-        # Update the level so everything gets initialized
-        self.level.update()
-        
+        #-----------------------------------------
+        # Bind Callbacks
+        # (Start)
+        #-----------------------------------------
         
         # Bind call backs to menu objects
         #self.menuFile.Bind(wx.EVT_MENU, self.OnAbout)
@@ -321,9 +301,65 @@ class CrazyApesFrame(wx.Frame):
         self.gameWindow.Bind(wx.EVT_KEY_DOWN,
                              self.OnKey)
         
+        # Selecting new menu item
+        self.Bind(wx.EVT_MENU,
+                  self.OnNew,
+                  self.menuFile_new)
+        
+        # Selecting exit menu item
+        self.Bind(wx.EVT_MENU,
+                  self.OnExit,
+                  self.menuFile_exit)
+        
+        
+        #-----------------------------------------
+        # Bind Callbacks
+        # (End)
+        #-----------------------------------------
+        
+    def __del__(self):
+        
+        # This is no game
+        self.gameState = level_data.Enum_GameState.STATE_NULL
+        self.timer.Stop()
+        self.timer=None
+        
+        # delete self.player
+        # delete self.level
+        
     def OnNew(self, event):
-        pass
-    
+        
+        self.timer.Stop()
+        
+        # Get rid of player object if one exists
+        if self.player is not None:
+            self.player = None
+        
+        # Create a new player
+        self.player = mage.Mage( self.level,
+                                 self.drawArea,
+                                 0)
+        
+        # Create RANDOM new level
+        self.startNewLevel( LevelType.RANDOM_NEW_LEVEL )
+        
+        # Draw level
+        # NOTE: Just by calling this, the user won't see anything.
+        #       The reason is this is calling the self.drawArea (which is
+        #       a draw engine) and it is drawing to the backbuffer.
+        self.level.draw()
+
+        # Add enemies
+        self.level.addEnemies(3)
+        
+        # Set the level to 1.
+        # It is the first level because it is a new game.
+        self.currentLevel = 1
+        
+        self.gameState = level_data.Enum_GameState.STATE_GAME_IN_PROGRESS
+        
+        self.timer.Start(define_data.UPDATE_TIME)
+        
     def OnLoad(self, event):
         pass
     
@@ -343,7 +379,7 @@ class CrazyApesFrame(wx.Frame):
         #        self.menuFile.FindItemById(event.Id).Label) )
     
     def OnExit(self, event):
-        pass
+        self.Close(True)
     
     def OnPaint(self, event):
         
@@ -377,69 +413,180 @@ class CrazyApesFrame(wx.Frame):
         #       clear it automatically
         dc.Clear()
         
-        # Now draw the bitmap FROM the backbuffer (because that
-        # is where all of the game is being drawn, to the top left corner
-        dc.DrawBitmap( self.backBuffer,
-                      wx.Point(0,0) )
+        self.updateView()
         
     def OnTimer(self, event):
         
-        # Update the level
-        self.level.update()
-        
-        # Update the viewing area
-        #----------------------------------
-        
-        # Cannot use a wxPaintDC, must use a wxClientDC when it is outside
-        # an onPaint event handler
-        #
-        # https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
-        area = wx.ClientDC(self.gameWindow)
-        
-        area.DrawBitmap( self.backBuffer,
-                         wx.Point(0,0) )
+        if self.gameState == level_data.Enum_GameState.STATE_GAME_IN_PROGRESS:
+            self.updateGame()
         
     def OnKey(self, event):
         
-        # Only 1 bit difference between a lower-case character and a 
-        # upper case character by "OR"'ing it (using "|") we ensure that 
-        # 1 bit is always 1.
-        # It will always ensure it is lower case.
-        #self.keyPress(event.GetKeyCode() | 32)
+        if self.gameState == level_data.Enum_GameState.STATE_GAME_IN_PROGRESS:
+        
+            # Only 1 bit difference between a lower-case character and a 
+            # upper case character by "OR"'ing it (using "|") we ensure that 
+            # 1 bit is always 1.
+            # It will always ensure it is lower case.
+            #self.keyPress(event.GetKeyCode() | 32)
+            #
+            result = event.GetKeyCode()
+            #
+            # Always get lower case
+            result_bit = result | 32
+            #
+            # Convert ascii code to letter
+            result_letter = chr(result)
+            #
+            # Convert to lower case
+            result_letter_bit = chr(result_bit)
+            #
+            self.level.keyPress(result_letter_bit)
+        
+        # Now update the view
+        self.updateView()
+        
+    def startNewLevel( self,
+                       type):
+    
+        # Delete level if it already exists
+        if self.level is not None:
+            self.level = None
+        
+        if self.backBuffer is not None:
+            self.backBuffer = None
+        
+        if type == LevelType.RANDOM_NEW_LEVEL:
+            
+            # Create a new lvel
+            self.level = level.Level( self.drawArea,
+                                      define_data.LEVEL_X,
+                                      define_data.LEVEL_Y)
+        
+        # Back-buffer
+        # wxBitmap
+        # https://wxpython.org/Phoenix/docs/html/wx.Bitmap.html
         #
-        result = event.GetKeyCode()
-        #
-        # Always get lower case
-        result_bit = result | 32
-        #
-        # Convert ascii code to letter
-        result_letter = chr(result)
-        #
-        # Convert to lower case
-        result_letter_bit = chr(result_bit)
-        #
-        self.level.keyPress(result_letter_bit)
+        # Draw everything onto the back buffer, when it is done, flip it onto
+        # the screen. It prevents flickering.
+        self.backBuffer = wx.Bitmap(
+            self.level.getWidth() * define_data.GRID_SIZE,
+            self.level.getHeight() * define_data.GRID_SIZE )
+        
+        # Set the member variables for the draw engine
+        self.drawArea.setWindow( self.backBuffer,
+                                 self.level.getWidth(),
+                                 self.level.getHeight())
+        
+        # Add player
+        self.level.addPlayer(self.player)
+        
+        # Draw level
+        # NOTE: Just by calling this, the user won't see anything.
+        #       The reason is this is calling the self.drawArea (which is
+        #       a draw engine) and it is drawing to the backbuffer.
+        self.level.draw()
+        
+        self.player.setLevel(self.level)
+        #player.update()
+        
+        # NEW METHOD CREATED, update backend code
+        self.level.setPlayerStart()
+                                                             
+        return True
+    
+    def updateView(self):
+        
+        # Do not try to draw if there are no backbuffer
+        if ( self.backBuffer is not None 
+             and 
+             self.gameState == \
+             level_data.Enum_GameState.STATE_GAME_IN_PROGRESS ):
+            
+            # Update the viewing area
+            #----------------------------------
+            
+            # Cannot use a wxPaintDC, must use a wxClientDC when it is outside
+            # an onPaint event handler
+            #
+            # https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
+            area = wx.ClientDC(self.gameWindow)
+            
+            area.DrawBitmap( self.backBuffer,
+                             wx.Point(0,0) )
+    
+    def updateGame(self):
         
         ## DEBUG
         ##
-        #print("DEBUG - OnKey callback. event.GetKeyCode(): {}".format(result))
-        #print("DEBUG - OnKey callback. event.GetKeyCode() with bit: {}".format(
-        #                                                            result_bit))
-        #print("DEBUG - OnKey callback. letter: {}".format(result_letter))
-        #print("DEBUG - OnKey callback. result_letter_bit with bit: {}".format(
-        #                                                    result_letter_bit))
-        # Update the viewing area
-        #----------------------------------
+        #print("DEBUG - updateGame callback")
         
-        # Cannot use a wxPaintDC, must use a wxClientDC when it is outside
-        # an onPaint event handler
-        #
-        # https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
-        area = wx.ClientDC(self.gameWindow)
+        # Update GUI display
+        info_Lives = "Lives: " + str(self.player.getLives())
+        info_Level = "Level: " + str(self.currentLevel)
+        info_NumEnemies = "Enemies: " + str(self.level.numEnemies())
+    
+        self.stPlayerLives.SetLabel(info_Lives)
+        self.stCurrentLevel.SetLabel(info_Level)
+        self.stNumberEnemies.SetLabel(info_NumEnemies)
         
-        area.DrawBitmap( self.backBuffer,
-                         wx.Point(0,0) )
+        ## DEBUG
+        ##
+        #print("DEBUG - updateGame callback. numEnemies: {}".format(
+        #                                   self.level.numEnemies()))
         
+        # Check Game State
+        if self.level.numEnemies() == 0:
+            
+            ## DEBUG
+            ##
+            #print("DEBUG - updateGame callback. No more enemies")
+        
+            self.timer.Stop()
+            self.currentLevel += 1
+            self.startNewLevel(LevelType.RANDOM_NEW_LEVEL)
+            
+            # Basic logic for enemies per level.
+            # Level number multiplied by 4
+            # Set to local variable
+            numEnemies = self.currentLevel * 4
+            
+            # Cap max amount of enemies to 15
+            if numEnemies > 15:
+                numEnemies = 15
+                
+            # Add enemies
+            self.level.addEnemies(numEnemies)
+            
+            self.level.setPlayerStart()
+            
+            # Start the timer
+            # Pass it a number in milliseconds between delay
+            self.timer.Start(define_data.UPDATE_TIME)
+            
+        # What if the character dies
+        elif self.level.numEnemies() > 0 and self.player.isAlive() == False:
+            
+            ## DEBUG
+            ##
+            #print("DEBUG - updateGame callback. Game Over")
+            
+            # Game over state
+            self.gameState = level_data.Enum_GameState.STATE_GAME_OVER
+            
+            # Stop the timer
+            self.timer.Stop()
+        else:
+            
+            ## DEBUG
+            ##
+            #print("DEBUG - updateGame callback. Playing Game.")
+            
+            # Just update the level
+            self.level.update()
+            
+        self.updateView()
+    
 class CrazyApesPanel(wx.Panel):
     """
     Description: This is the panel that goes into the main apps frame.

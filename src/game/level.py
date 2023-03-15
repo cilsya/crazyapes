@@ -11,6 +11,7 @@ import character
 import drawEngine
 import enemy
 import level_data
+import sprite_data
 
 #---------------
 # Imports 
@@ -44,6 +45,9 @@ class Level(object):
         
         # Set map
         self.drawArea.setMap(self.level)
+        
+        # Clear the NPC
+        level_data.NPC = []
         
     def __del__(self):
         
@@ -171,7 +175,22 @@ class Level(object):
                spr):
         level_data.NPC.append(spr)
         
+    def numEnemies(self):
+        
+        list_enemy_type = []
+        for enemy in level_data.NPC:
+            if enemy.classID == sprite_data.Enum.ENEMY_CLASSID:
+                list_enemy_type.append(enemy)
+        
+        return len(list_enemy_type)
+        
     def setPlayerStart(self):
         self.player.setPosition(self.startX,
                                 self.startY)
+        
+    def getWidth(self):
+        return self.width
+        
+    def getHeight(self):
+        return self.height
     

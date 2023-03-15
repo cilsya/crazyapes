@@ -30,3 +30,19 @@ class Enum(object):
     # (End)
     #------------------
     
+class Enum_GameState(object):
+    #------------------
+    # Static Member variables
+    # (Start)
+    #------------------
+    
+    # There is no game
+    STATE_NULL = 0
+    STATE_GAME_IN_PROGRESS = 1
+    STATE_GAME_OVER = 2
+    STATE_PLAYER_WON = 3
+    
+    #------------------
+    # Static Member variables
+    # (End)
+    #------------------
