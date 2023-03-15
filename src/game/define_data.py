@@ -1,0 +1,3 @@
+GRID_SIZE = 32
+LEVEL_X = 20
+LEVEL_Y = 10

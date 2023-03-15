@@ -31,6 +31,10 @@ class Level(object):
         self.player = None
         self.drawArea = de
         
+        # Default starting position
+        self.startX = 1
+        self.startY = 1
+        
         # Making nested list
         for x in range(self.width):
             self.level[x] = [None] * self.height
@@ -166,4 +170,8 @@ class Level(object):
     def addNPC(self,
                spr):
         level_data.NPC.append(spr)
+        
+    def setPlayerStart(self):
+        self.player.setPosition(self.startX,
+                                self.startY)
     

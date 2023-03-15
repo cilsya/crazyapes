@@ -46,9 +46,10 @@ class Sprite(object):
     
     def __del__(self):
         
-        # erase the dying sprite
-        self.erase(self.pos.x,
-                   self.pos.y)
+        ## erase the dying sprite
+        #self.erase(self.pos.x,
+        #           self.pos.y)
+        pass
         
         
     def getPosition(self):
@@ -119,4 +120,21 @@ class Sprite(object):
     #def idleUpdate(self):
     #    # This is for the inherited classes
     #    pass
+    
+    def setPosition(self,
+                    x,
+                    y):
+        
+        # Erase sprite
+        self.erase(self.pos.x,
+                   self.pos.y)
+        
+        self.facingDirection.x = -100
+        self.facingDirection.y = -100
+        
+        self.pos.x = x
+        self.pos.y = y
+        
+        # draw sprite
+        self.draw(self.pos.x, self.pos.y)
         
