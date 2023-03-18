@@ -1,0 +1,5 @@
+EmptyTile = "Data/emptyTile.bmp"
+WallTile = "Data/wallTile.bmp"
+PlayerTile = "Data/playerTile.bmp"
+EnemyTile = "Data/enemyTile.bmp"
+FireballTile = "Data/fireballTile.bmp"

@@ -1,0 +1,6 @@
+ArrowLeft.bmp
+ArrowRight.bmp
+Eraser.bmp
+Execute.bmp
+
+colours.bmp
