@@ -1,6 +1,8 @@
 # wxPython documentation
 # https://wxpython.org/Phoenix/docs/html/wx.1moduleindex.html
 
+import pickle
+
 import wx
 
 from copy import deepcopy as deepcopy
@@ -112,20 +114,22 @@ class LevelEditorFrame(wx.Frame):
                                             Enum_Menu_IDS.ID_New_Level,
                                             "&New Level")
         self.menuFile.AppendSeparator()
-        self.menuFile.Append( Enum_Menu_IDS.ID_Load,
-                                 "&Load")
-        self.menuFile.Append( Enum_Menu_IDS.ID_Save,
-                                 "&Save")
+        self.menuFile_load = self.menuFile.Append( Enum_Menu_IDS.ID_Load,
+                                                   "&Load")
+        self.menuFile_save = self.menuFile.Append( Enum_Menu_IDS.ID_Save,
+                                                    "&Save")
         self.menuFile.AppendSeparator()
-        self.menuFile.Append( Enum_Menu_IDS.ID_About,
-                                 "&About")
+        self.menuFile_about = self.menuFile.Append( Enum_Menu_IDS.ID_About,
+                                                    "&About")
         self.menuFile.AppendSeparator()
-        self.menuFile.Append( Enum_Menu_IDS.ID_Exit,
-                                 "E&xit")
+        self.menuFile_exit = self.menuFile.Append( Enum_Menu_IDS.ID_Exit,
+                                                   "E&xit")
         
+        # Append the file menu to the menu bar
         self.menuBar.Append(self.menuFile,
                             "&File")
         
+        # Set the menu bar
         self.SetMenuBar(self.menuBar)
         
         #----------------------------------------
@@ -322,9 +326,29 @@ class LevelEditorFrame(wx.Frame):
                    self.OnNewLevel,
                    self.menuFile_NewLevel )
         
-        # Callback - Previous Button
+        # Callback - Load
+        self.Bind( wx.EVT_MENU,
+                   self.OnLoad,
+                   self.menuFile_load )
+        
+        # Callback - Save
+        self.Bind( wx.EVT_MENU,
+                   self.OnSave,
+                   self.menuFile_save )
+        
+        # Callback - About
+        self.Bind( wx.EVT_MENU,
+                   self.OnAbout,
+                   self.menuFile_about )
+        
+        # Callback - About
+        self.Bind( wx.EVT_MENU,
+                   self.OnExit,
+                   self.menuFile_exit )
+        
+        # Callback - Buttons clicked
         self.toolbar.Bind( wx.EVT_TOOL,
-                                self.OnToolbarClicked)
+                           self.OnToolbarClicked )
         
         #-----------------------------------------
         # Bind Callbacks
@@ -679,6 +703,73 @@ class LevelEditorFrame(wx.Frame):
         self.grid_width = stretchedSize.GetWidth()
         self.grid_height = stretchedSize.GetHeight()
         
+    def savePackage(self, filename):
+        
+        ## https://www.tutorialsteacher.com/python/python-read-write-file
+        #with open(filename, "wb") as file:
+            
+        #    # Write out the number of levels
+        #    numLevels = len(self.package)
+        #    file.write(numLevels)
+            
+        #    # Iterate though all of the levels and save out the data for each
+        #    for level in self.package:
+                
+        #        file.write(level.grid_x)
+        #        file.write(level.grid_y)
+                
+        #        # Loop through the grid, row by row, and write to file
+        #        # all the data that we have.
+        #        for x in range(level.grid_x):
+        #            file.write(level.grid[x])
+
+        ## https://www.tutorialsteacher.com/python/python-read-write-file
+        #with open(filename, "w+b") as file:
+            
+        #    # https://www.tutorialspoint.com/
+        #    # How-to-write-binary-data-to-a-file-using-Python
+        #    byte_arr = []
+            
+        #    # Write out the number of levels
+        #    numLevels = len(self.package)
+        #    byte_arr.append(numLevels)
+            
+        #    # Iterate though all of the levels and save out the data for each
+        #    for level in self.package:
+                
+        #        byte_arr.append(level.grid_x)
+        #        byte_arr.append(level.grid_y)
+                
+        #        # Loop through the grid, row by row, and write to file
+        #        # all the data that we have.
+        #        for x in range(level.grid_x):
+        #            byte_arr.append(level.grid[x])
+                    
+        #    # Write to file
+        #    binary_format = bytearray(byte_arr)
+        #    file.write(binary_format)
+        
+        # Data to save to file
+        data = []
+        
+        # Iterate though all of the levels and save out the data for each
+        for level in self.package:
+            
+            level_grid = []
+            
+            # Loop through the grid, row by row, and write to file
+            # all the data that we have.
+            for x in range(level.grid_x):
+                level_grid.append(level.grid[x])
+                
+            data.append(level_grid)
+        
+        # Save to file
+        with open(filename, "wb") as handle:
+            pickle.dump( data,
+                         handle,
+                         protocol=pickle.HIGHEST_PROTOCOL )
+
     #---------------------- Methods (End) --------------------------------------
     
     #----------------------- EVENT CALLBACKS (START) ---------------------------
@@ -709,9 +800,79 @@ class LevelEditorFrame(wx.Frame):
     def OnNewLevel(self, event):
         self.createNewLevel()
     
-    def OnLoad(self, event):
-        pass
+    def OnSave(self, event):
+        
+        # https://wxpython.org/Phoenix/docs/html/wx.FileDialog.html
+        dialog = wx.FileDialog( self,
+                               "Save Package",
+                               "",
+                               "Package1.pkg",
+                               "Package (*.pkg)|*.pkg",
+                               wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        
+        if dialog.ShowModal() == wx.ID_OK:
+            
+            self.savePackage( dialog.GetPath() )
     
+    def OnLoad(self, event):
+        
+        # https://wxpython.org/Phoenix/docs/html/wx.FileDialog.html
+        dialog = wx.FileDialog( self,
+                               "Load Package",
+                               "",
+                               "",
+                               "Package (*.pkg)|*.pkg",
+                               wx.FD_OPEN )
+        
+        if dialog.ShowModal() == wx.ID_OK:
+            
+            filename = dialog.GetPath()
+            
+            ## https://www.tutorialsteacher.com/python/python-read-write-file
+            #with open(filename, "rb") as file:
+            #    numLevels = file.read()
+            
+            with open(filename, "rb") as handle:
+                data = pickle.load(handle)
+                
+            
+        ## DEBUG
+        ##
+        #print("DEBUG - data: {}".format(data))
+        
+        # We are going to update the internal data
+        # BUT FIRST
+        # We populate local variables in case something fails
+        package = []
+        numLevels = len(data)
+        
+        for i in range(numLevels):
+            
+            level = Level_Info()
+            level.grid = data[i]
+            level.grid_x = len(level.grid)
+            level.grid_y = len(level.grid[0])
+            
+            package.append(level)
+            
+        # Now we update the internal data
+        self.package = package
+        self.levelIndex = 1
+        self.setCurrentLevel(self.package[0])
+        
+        # Enable the toolbar
+        self.toolbar.EnableTool( Enum_Toolbar_IDS.TLB_PREVIOUS_LEVEL,
+                                 self.levelIndex != 1 )
+        self.toolbar.EnableTool( Enum_Toolbar_IDS.TLB_NEXT_LEVEL,
+                                 self.levelIndex != len(self.package) )
+        
+        # Enable the new level menu file item
+        self.menuFile.Enable( Enum_Menu_IDS.ID_New_Level,
+                              True )
+        
+        # Update our view to reflect the changes
+        self.updateView()
+        
     def OnAbout(self, event):
         pass
     
