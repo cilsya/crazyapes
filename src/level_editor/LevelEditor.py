@@ -9,23 +9,9 @@ from copy import deepcopy as deepcopy
 
 import asset_data
 import define_level_editor_data
+import level_data
 import asset_editor_data
 
-class Enum_Tile_IDS(object):
-    #------------------
-    # Static Member variables
-    # (Start)
-    #------------------
-    
-    TILE_EMPTY = 0
-    TILE_WALL = 1
-    TILE_PLAYER = 2
-    TILE_ENEMY = 3
-    
-    #------------------
-    # Static Member variables
-    # (End)
-    #------------------
 
 class Enum_Menu_IDS:
     ID_New_Package = 400
@@ -59,7 +45,7 @@ class LevelEditorFrame(wx.Frame):
         
         #super(LevelEditorFrame, self).__init__( parent,
         #                                        title = title,
-        #                                        pos = (100, 100),
+        #           0                             pos = (100, 100),
         #                                        size = (650, 500) )
         super(LevelEditorFrame, self).__init__( 
                 parent,
@@ -705,50 +691,6 @@ class LevelEditorFrame(wx.Frame):
         
     def savePackage(self, filename):
         
-        ## https://www.tutorialsteacher.com/python/python-read-write-file
-        #with open(filename, "wb") as file:
-            
-        #    # Write out the number of levels
-        #    numLevels = len(self.package)
-        #    file.write(numLevels)
-            
-        #    # Iterate though all of the levels and save out the data for each
-        #    for level in self.package:
-                
-        #        file.write(level.grid_x)
-        #        file.write(level.grid_y)
-                
-        #        # Loop through the grid, row by row, and write to file
-        #        # all the data that we have.
-        #        for x in range(level.grid_x):
-        #            file.write(level.grid[x])
-
-        ## https://www.tutorialsteacher.com/python/python-read-write-file
-        #with open(filename, "w+b") as file:
-            
-        #    # https://www.tutorialspoint.com/
-        #    # How-to-write-binary-data-to-a-file-using-Python
-        #    byte_arr = []
-            
-        #    # Write out the number of levels
-        #    numLevels = len(self.package)
-        #    byte_arr.append(numLevels)
-            
-        #    # Iterate though all of the levels and save out the data for each
-        #    for level in self.package:
-                
-        #        byte_arr.append(level.grid_x)
-        #        byte_arr.append(level.grid_y)
-                
-        #        # Loop through the grid, row by row, and write to file
-        #        # all the data that we have.
-        #        for x in range(level.grid_x):
-        #            byte_arr.append(level.grid[x])
-                    
-        #    # Write to file
-        #    binary_format = bytearray(byte_arr)
-        #    file.write(binary_format)
-        
         # Data to save to file
         data = []
         
@@ -761,7 +703,7 @@ class LevelEditorFrame(wx.Frame):
             # all the data that we have.
             for x in range(level.grid_x):
                 level_grid.append(level.grid[x])
-                
+            
             data.append(level_grid)
         
         # Save to file
@@ -769,7 +711,7 @@ class LevelEditorFrame(wx.Frame):
             pickle.dump( data,
                          handle,
                          protocol=pickle.HIGHEST_PROTOCOL )
-
+    
     #---------------------- Methods (End) --------------------------------------
     
     #----------------------- EVENT CALLBACKS (START) ---------------------------
@@ -874,10 +816,13 @@ class LevelEditorFrame(wx.Frame):
         self.updateView()
         
     def OnAbout(self, event):
-        pass
+        
+        # https://wxpython.org/Phoenix/docs/html/wx.functions.html#wx.MessageBox
+        wx.MessageBox("The Crazy Apes Level Editor. Create Crazy Levels!",
+                      "About Crazy Apes Level Editor")
     
     def OnExit(self, event):
-        pass
+        self.Close(True)
     
     def OnToolbarClicked(self, event):
         """
@@ -1041,13 +986,13 @@ class LevelEditorFrame(wx.Frame):
             selected = 0
             
             if self.toolbar.GetToolState(Enum_Toolbar_IDS.TLB_ERASE):
-                selected = Enum_Tile_IDS.TILE_EMPTY
+                selected = level_data.Enum_Tile_IDS.TILE_EMPTY
             elif self.toolbar.GetToolState(Enum_Toolbar_IDS.TLB_WALL):
-                selected = Enum_Tile_IDS.TILE_WALL
+                selected = level_data.Enum_Tile_IDS.TILE_WALL
             elif self.toolbar.GetToolState(Enum_Toolbar_IDS.TLB_PLAYER):
-                selected = Enum_Tile_IDS.TILE_PLAYER
+                selected = level_data.Enum_Tile_IDS.TILE_PLAYER
             elif self.toolbar.GetToolState(Enum_Toolbar_IDS.TLB_ENEMY):
-                selected = Enum_Tile_IDS.TILE_ENEMY
+                selected = level_data.Enum_Tile_IDS.TILE_ENEMY
             else:
                 return
             
@@ -1058,7 +1003,7 @@ class LevelEditorFrame(wx.Frame):
                 backBufferDC.SelectObject(self.backBuffer)
                 
                 # Check if selected is a tile player
-                if selected == Enum_Tile_IDS.TILE_PLAYER:
+                if selected == level_data.Enum_Tile_IDS.TILE_PLAYER:
                     
                     ## DEBUG
                     ##
@@ -1080,16 +1025,17 @@ class LevelEditorFrame(wx.Frame):
                             #print("DEBUG - Grid x: {} y: {}".format(x,y))
                             
                             if self.currentLevel.grid[x][y] == \
-                                Enum_Tile_IDS.TILE_PLAYER:
+                                level_data.Enum_Tile_IDS.TILE_PLAYER:
                                     
                                     # Remove the player, make it an empty
                                     # tile
                                     self.currentLevel.grid[x][y] = \
-                                                Enum_Tile_IDS.TILE_EMPTY
+                                           level_data.Enum_Tile_IDS.TILE_EMPTY
                                     
                                     # Draw the bitmap
                                     backBufferDC.DrawBitmap( 
-                                        self.items[Enum_Tile_IDS.TILE_EMPTY],
+                                        self.items[
+                                          level_data.Enum_Tile_IDS.TILE_EMPTY],
                                         
                                         int(x * (define_level_editor_data.\
                                             GRID_SIZE  + 1) + 1),
