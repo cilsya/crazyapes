@@ -3,6 +3,8 @@
 
 import wx
 
+from copy import deepcopy as deepcopy
+
 import asset_data
 import define_level_editor_data
 import asset_editor_data
@@ -18,11 +20,17 @@ class Enum_Menu_IDS:
 class Enum_Toolbar_IDS:
     TLB_WALL = 500
     TLB_PLAYER = 501
-    TLB_ENEMY = 502
+    TLB_ENEMY = 502                                    
     TLB_ERASE = 503
     TLB_PREVIOUS_LEVEL = 504
     TLB_NEXT_LEVEL = 505
     TLB_TEST_LEVEL = 506
+    
+class Level_Info:
+    def __init__(self):
+        self.grid_x = None
+        self.grid_y = None
+        self.grid = None
     
 class LevelEditorFrame(wx.Frame):
     """
@@ -51,6 +59,11 @@ class LevelEditorFrame(wx.Frame):
         self.toolbar = None
         self.menuFile = wx.Menu()
         
+        # For the game editor
+        self.package = []
+        self.levelIndex = None
+        self.currentLevel = None
+        
         #------------------
         # Member Variables
         # (End)
@@ -63,10 +76,12 @@ class LevelEditorFrame(wx.Frame):
         
         self.menuBar = wx.MenuBar()
         
-        self.menuFile.Append( Enum_Menu_IDS.ID_New_Package,
-                                 "New &Package")
-        self.menuFile.Append( Enum_Menu_IDS.ID_New_Level,
-                                 "&New Level")
+        self.menuFile_NewPackage = self.menuFile.Append(
+                                                Enum_Menu_IDS.ID_New_Package,
+                                               "New &Package")
+        self.menuFile_NewLevel = self.menuFile.Append( 
+                                            Enum_Menu_IDS.ID_New_Level,
+                                            "&New Level")
         self.menuFile.AppendSeparator()
         self.menuFile.Append( Enum_Menu_IDS.ID_Load,
                                  "New &Load")
@@ -139,14 +154,26 @@ class LevelEditorFrame(wx.Frame):
         self.eraserBitmap = self.eraserImage.ConvertToBitmap()
         
         # Arrow Left
-        self.arrowLeftBitmap = wx.Bitmap(asset_editor_data.ArrowLeft)
+        self.arrowLeftImage = wx.Bitmap(asset_editor_data.ArrowLeft).\
+                                ConvertToImage().Scale(
+                                    define_level_editor_data.TOOLBAR_SIZE,
+                                    define_level_editor_data.TOOLBAR_SIZE)
+        self.arrowLeftImage.SetMaskColour(255, 255, 255)
+        self.arrowLeftBitmap = self.arrowLeftImage.ConvertToBitmap()
         
         # Arrow Right
-        self.arrowRightBitmap = wx.Bitmap(asset_editor_data.ArrowRight)
+        self.arrowRightImage = wx.Bitmap(asset_editor_data.ArrowRight).\
+                                ConvertToImage().Scale(
+                                    define_level_editor_data.TOOLBAR_SIZE,
+                                    define_level_editor_data.TOOLBAR_SIZE)
+        self.arrowRightImage.SetMaskColour(255, 255, 255)
+        self.arrowRightBitmap = self.arrowRightImage.ConvertToBitmap()
         
         # Execute
         self.executeImage = wx.Bitmap(asset_editor_data.Execute).\
-            ConvertToImage()
+            ConvertToImage().Scale(
+                                    define_level_editor_data.TOOLBAR_SIZE,
+                                    define_level_editor_data.TOOLBAR_SIZE)
         self.executeImage.SetMaskColour(255, 255, 255)
         self.executeBitmap = self.executeImage.ConvertToBitmap()
         
@@ -183,8 +210,8 @@ class LevelEditorFrame(wx.Frame):
         #
         self.toolbar.AddSeparator()
         
-        
-        self.toolbar.AddTool( Enum_Toolbar_IDS.TLB_PREVIOUS_LEVEL,
+        self.button_previous_level = self.toolbar.AddTool(
+                               Enum_Toolbar_IDS.TLB_PREVIOUS_LEVEL,
                               "Previous level",
                               self.arrowLeftBitmap,
                               "Previous level" )
@@ -210,13 +237,181 @@ class LevelEditorFrame(wx.Frame):
         # This function should be called after you have added tools.
         self.toolbar.Realize()
         
-    #----------------------- EVENT CALLBACKS (START) ---------------------------
+        #-----------------------------------------
+        # Bind Callbacks
+        # (Start)
+        #-----------------------------------------
         
-    def OnNewPackage(self, event):
-        pass
+        # Callback - New Package
+        self.Bind( wx.EVT_MENU,
+                   self.OnNewPackage,
+                   self.menuFile_NewPackage )
+        
+        # Callback - New Level
+        self.Bind( wx.EVT_MENU,
+                   self.OnNewLevel,
+                   self.menuFile_NewLevel )
+        
+        # Callback - Previous Button
+        self.toolbar.Bind( wx.EVT_TOOL,
+                                self.OnToolbarClicked)
+        
+        #-----------------------------------------
+        # Bind Callbacks
+        # (End)
+        #-----------------------------------------
+        
+        
+    #---------------------- Methods (Start) ------------------------------------
+        
+    def createNewLevel(self):
+        
+        # https://wxpython.org/Phoenix/docs/html/wx.functions.html?
+        # highlight=getnumberfromuser#wx.GetNumberFromUser
+        x = wx.GetNumberFromUser( "Enter the number of columns for the "
+                                  "new level.",
+                                  "Columns:",
+                                  "New Level",
+                                  10,
+                                  0,
+                                  100,
+                                  self)
+        
+        # Error checking
+        if x < 1:
+            return False
+            
+        # https://wxpython.org/Phoenix/docs/html/wx.functions.html?
+        # highlight=getnumberfromuser#wx.GetNumberFromUser
+        y = wx.GetNumberFromUser( "Enter the number of rows for the "
+                                  "new level.",
+                                  "Rows:",
+                                  "New Level",
+                                  10,
+                                  0,
+                                  100,
+                                  self)
+        
+        # Error checking
+        if y < 1:
+            return False
+        
+        # Create new information for our level
+        currentLevel = Level_Info()
+        
+        ## DEBUG
+        ##
+        #print("DEBUG - in createNewLevel, currentLevel: {}".format(
+        #                                                currentLevel))
+        
+        # Add the new level to our package.
+        self.package.append(currentLevel)
+        
+        self.levelIndex = len(self.package)
+        
+        currentLevel.grid_x = x
+        currentLevel.grid_y = y
+        #
+        # My addition
+        currentLevel.grid = []
+        
+        ## Fill in the grid as a string
+        #self.currentLevel.grid = ""
+        
+        ## Concantenate the string
+        #for i in range( self.currentLevel.grid_x ):
+        #    self.currentLevel.grid = ( self.currentLevel.grid
+        #                               +
+        #                               str(self.currentLevel.grid_y) )
+        
+        # Cycle through x and y
+        for i in range(currentLevel.grid_x):
+            
+            # Create an empty list
+            currentLevel.grid.append([])
+            
+            create_sub_list = True
+            
+            for j in range(currentLevel.grid_y):
+                
+                
+                if create_sub_list == True:
+                    
+                    # Create an empty sub list
+                    currentLevel.grid[i] = []
+                    
+                    create_sub_list = False
+                
+                # Put the value in the new slot
+                currentLevel.grid[i].append(0)
+        
+        self.setCurrentLevel(currentLevel)
+        
+        # Check to see if we have more than 2 levels
+        # Enable the buttons on the GUI
+        if self.levelIndex >= 2:
+            
+            # Enable
+            self.toolbar.EnableTool(Enum_Toolbar_IDS.TLB_PREVIOUS_LEVEL,
+                                    True)
+            
+            # There is no next level yet, so set it to false.
+            self.toolbar.EnableTool(Enum_Toolbar_IDS.TLB_NEXT_LEVEL,
+                                    False)
+        
+        return True
+        
+    def setCurrentLevel(self,
+                        level):
+        
+        self.currentLevel = level
+        
+        new_title = "Level Editor for Crazy Apes - Level {}".format(
+                                                             self.levelIndex )
+        self.SetTitle(new_title)
+        
+        status_info = "Level Size: {}x{}".format(self.currentLevel.grid_x,
+                                                 self.currentLevel.grid_y)
+        
+        # Number 1 for the second argument because we split the status info
+        # and it is the second one we want to update (base 0)
+        self.SetStatusText(status_info, 1)
+        
+        # Using the same variable
+        status_info = "Current Level: {}".format(self.levelIndex)
+        #
+        # Set the THIRD section of the status info
+        self.SetStatusText(status_info, 2)
+        
+    #---------------------- Methods (End) --------------------------------------
     
+    #----------------------- EVENT CALLBACKS (START) ---------------------------
+    
+    def OnNewPackage(self, event):
+        
+        old_package = self.package
+        old_levelIndex = self.levelIndex
+        
+        self.package = []
+        self.levelIndex = 0
+        
+        # If failed to create a new level
+        if self.createNewLevel() == False:
+            self.package = old_package
+            self.levelIndex = old_levelIndex
+        else:
+             self.menuFile.Enable( Enum_Menu_IDS.ID_New_Level,
+                                  True )
+            
+             # Disable at the moment since we did not create a package for 
+             # it yet
+             self.toolbar.EnableTool(Enum_Toolbar_IDS.TLB_PREVIOUS_LEVEL,
+                                     False)
+             self.toolbar.EnableTool(Enum_Toolbar_IDS.TLB_NEXT_LEVEL,
+                                    False)
+            
     def OnNewLevel(self, event):
-        pass
+        self.createNewLevel()
     
     def OnLoad(self, event):
         pass
@@ -231,9 +426,59 @@ class LevelEditorFrame(wx.Frame):
         """
         EVT_TOOL_RANGE Time; 26:00 vid 8
         """
-        pass
-    
+        
+        ## DEBUG
+        ##
+        #print("DEBUG - The OnToolbarClicked button was pressed.")
+        #print("DEBUG - self.package: {}".format(self.package))
+        
+        changed = False
+        
+        # Check the ID that was passed to the event.
+        # Going to do different functionality based on the ID.
+        if event.GetId() == Enum_Toolbar_IDS.TLB_PREVIOUS_LEVEL:
+            
+            ## DEBUG
+            ##
+            #print("DEBUG - The TLB_PREVIOUS_LEVEL button was pressed.")
+            #print("DEBUG - self.package: {}".format(self.package))
+            
+            if self.levelIndex > 1:
+                self.levelIndex -= 1
+            
+            changed = True
+            
+        elif event.GetId() == Enum_Toolbar_IDS.TLB_NEXT_LEVEL:
+            
+            if self.levelIndex < len(self.package):
+                self.levelIndex += 1
+            
+            changed = True
+        
+        # If there was a change
+        if changed == True:
+            
+            for i in range(len(self.package)):
+                
+                current_package = self.package[i]
+                
+                if i == self.levelIndex - 1:
+                    self.setCurrentLevel(current_package)
+                    
+                    # Break because we found what we needed
+                    break
+                    
+            # Disable at the moment since we did not create a package for 
+            # it yet
+            self.toolbar.EnableTool(Enum_Toolbar_IDS.TLB_PREVIOUS_LEVEL,
+                                    self.levelIndex != 1)
+            self.toolbar.EnableTool(Enum_Toolbar_IDS.TLB_NEXT_LEVEL,
+                                    self.levelIndex != len(self.package) )
+        
     #----------------------- EVENT CALLBACKS (END) -----------------------------
+        
+        
+        
         
 class LevelEditorPanel(wx.Panel):
     """
