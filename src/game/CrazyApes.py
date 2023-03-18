@@ -4,6 +4,8 @@
 #------------------------ Imports (Start) --------------------------------------
 
 # Native modules
+import math
+import time
 
 # Third-party modules
 import wx
@@ -61,7 +63,7 @@ class CrazyApesFrame(wx.Frame):
         super(CrazyApesFrame, self).__init__( parent,
                                               title = title,
                                               pos = (100, 100),
-                                              size = (650, 500) )
+                                              size = (900, 500) )
         
         #---------------------------
         # Game variables
@@ -75,6 +77,9 @@ class CrazyApesFrame(wx.Frame):
         self.currentLevel = None
         self.gameState = None
         self.backBuffer = None
+        self.finalBackBuffer = None
+        
+        
         
         # https://wxpython.org/Phoenix/docs/html/wx.Timer.html
         self.timer = wx.Timer( self, 
@@ -83,6 +88,9 @@ class CrazyApesFrame(wx.Frame):
         self.level = None
         self.player = None
         self.drawArea = drawEngine.DrawEngine()
+        
+        # Elapsed time values
+        self.time_initial = 0.0
         
         #---------------------------
         # Game variables
@@ -264,6 +272,8 @@ class CrazyApesFrame(wx.Frame):
         # Pass it a number in milliseconds between delay
         self.timer.Start(define_data.UPDATE_TIME)
         
+        
+        
         self.gameState = level_data.Enum_GameState.STATE_NULL
         
         #-----------------------------------------
@@ -292,6 +302,10 @@ class CrazyApesFrame(wx.Frame):
         # Bind paint event to game window
         self.gameWindow.Bind(wx.EVT_PAINT,
                              self.OnPaint)
+        
+        # Bind paint event to game window
+        self.gameWindow.Bind(wx.EVT_SIZE,
+                             self.OnSize)
         
         # Bind timer event to wxTimer object
         self.Bind(wx.EVT_TIMER, 
@@ -347,10 +361,12 @@ class CrazyApesFrame(wx.Frame):
         # NOTE: Just by calling this, the user won't see anything.
         #       The reason is this is calling the self.drawArea (which is
         #       a draw engine) and it is drawing to the backbuffer.
-        self.level.draw()
+        #self.level.draw()
 
         # Add enemies
-        self.level.addEnemies(3)
+        self.level.addEnemies(1, 5)
+        
+        self.level.setPlayerStart()
         
         # Set the level to 1.
         # It is the first level because it is a new game.
@@ -416,7 +432,7 @@ class CrazyApesFrame(wx.Frame):
         self.updateView()
         
     def OnTimer(self, event):
-        
+                                        
         if self.gameState == level_data.Enum_GameState.STATE_GAME_IN_PROGRESS:
             self.updateGame()
         
@@ -444,6 +460,25 @@ class CrazyApesFrame(wx.Frame):
             self.level.keyPress(result_letter_bit)
         
         # Now update the view
+        self.updateView()
+        
+    def OnSize(self, event):
+        
+        # https://docs.wxpython.org/wx.Event.html?highlight=skip#wx.Event.Skip
+        #
+        # Basically saying do you normally do to automatically handle certain
+        # things in the event, then give us control before returning.
+        event.Skip()
+        
+        # Delete finalBackBuffer if it already exists
+        if self.finalBackBuffer is not None:
+            self.finalBackBuffer = None
+            
+        clientArea = self.gameWindow.GetClientSize()
+        
+        self.finalBackBuffer = wx.Bitmap(clientArea.GetWidth(),
+                                         clientArea.GetHeight())
+        
         self.updateView()
         
     def startNewLevel( self,
@@ -497,6 +532,12 @@ class CrazyApesFrame(wx.Frame):
     
     def updateView(self):
         
+        # Cannot use a wxPaintDC, must use a wxClientDC when it is outside
+        # an onPaint event handler
+        #
+        # https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
+        area = wx.ClientDC(self.gameWindow)
+        
         # Do not try to draw if there are no backbuffer
         if ( self.backBuffer is not None 
              and 
@@ -506,14 +547,21 @@ class CrazyApesFrame(wx.Frame):
             # Update the viewing area
             #----------------------------------
             
-            # Cannot use a wxPaintDC, must use a wxClientDC when it is outside
-            # an onPaint event handler
-            #
-            # https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
-            area = wx.ClientDC(self.gameWindow)
+            ## Cannot use a wxPaintDC, must use a wxClientDC when it is outside
+            ## an onPaint event handler
+            ##
+            ## https://wxpython.org/Phoenix/docs/html/wx.ClientDC.html
+            #area = wx.ClientDC(self.gameWindow)
             
-            area.DrawBitmap( self.backBuffer,
-                             wx.Point(0,0) )
+            #area.DrawBitmap( self.backBuffer,
+            #                 wx.Point(0,0) )
+            
+            self.stretchGameView()
+            
+        elif self.finalBackBuffer is not None:
+            self.drawInformation()
+        
+        self.flipBackBuffer()
     
     def updateGame(self):
         
@@ -554,9 +602,16 @@ class CrazyApesFrame(wx.Frame):
             # Cap max amount of enemies to 15
             if numEnemies > 15:
                 numEnemies = 15
-                
+            
+            # Basic algorithm to make enemies faster
+            newSpeed = math.pow(2, self.currentLevel)
+            #
+            # Clamp new speed
+            if newSpeed > 100:
+                newSpeed = 100
+            
             # Add enemies
-            self.level.addEnemies(numEnemies)
+            self.level.addEnemies(numEnemies, newSpeed)
             
             self.level.setPlayerStart()
             
@@ -582,10 +637,210 @@ class CrazyApesFrame(wx.Frame):
             ##
             #print("DEBUG - updateGame callback. Playing Game.")
             
+            # Measured in seconds, multiply by 1000.0
+            # to make it milliseconds and type float
+            time_elasped = self.get_elasped_time() * 1000.0
+            
+            ## DEBUG
+            ##
+            #print("DEBUG - self.updateGame() time_elasped: {}".format(
+            #                                                    time_elasped))
+            
             # Just update the level
-            self.level.update()
+            self.level.update(time_elasped)
             
         self.updateView()
+        
+    def start_timer(self):
+        
+        # https://docs.python.org/3/library/time.html#time.process_time
+        # Measured in seconds (fractional seconds)
+        self.time_initial = time.perf_counter()
+        
+    def get_elasped_time(self):
+        return time.perf_counter() - self.time_initial
+        
+    def drawInformation(self):
+        
+        clientArea = self.gameWindow.GetClientSize()
+        
+        finalDC = wx.MemoryDC()
+        
+        finalDC.SelectObject(self.finalBackBuffer)
+        
+        finalDC.Clear()
+        
+        finalDC.DrawRectangle(0,
+                              0,
+                              clientArea.GetWidth(),
+                              clientArea.GetHeight())
+        
+        message = ""
+        
+        if self.gameState == level_data.Enum_GameState.STATE_NULL:
+            message = "Go to File > New to start a new game!"
+        elif self.gameState == level_data.Enum_GameState.STATE_PLAYER_WON:
+            message = "You have won the game!"
+        elif self.gameState == level_data.Enum_GameState.STATE_GAME_OVER:
+            message = "GAME OVER!"
+        
+        # https://docs.wxpython.org/wx.DC.html#wx.DC.GetTextExtent
+        # Return type
+        #
+        # wx.Size
+        # https://docs.wxpython.org/wx.Size.html#wx-size
+        textDimensions = finalDC.GetTextExtent(message)
+        
+        textWidth = textDimensions.x
+        textHeight = textDimensions.y
+        
+        center = wx.Point((clientArea.GetWidth() - textWidth) / 2,
+                          (clientArea.GetHeight() - textHeight) / 2 )
+        
+        finalDC.DrawText(message,
+                         center)
+        
+        finalDC.SelectObject(wx.NullBitmap)
+        
+    def stretchGameView(self):
+        
+        clientArea = self.gameWindow.GetClientSize()
+        stretchedSize = wx.Size()
+        
+        
+        # Check if we proportionally resize the height OR the width
+        if ( clientArea.GetWidth() 
+             * 
+             self.level.getHeight() 
+             / 
+             self.level.getWidth() 
+             < 
+             clientArea.GetHeight()):
+        
+            stretchedSize.Set( # Set width
+                               clientArea.GetWidth(),
+                
+                               # Set calculated proportional height
+                               clientArea.GetWidth() 
+                               * 
+                               self.level.getHeight() 
+                               / 
+                               self.level.getWidth() )
+        
+        else:
+            stretchedSize.Set( # Set calculated proportional width
+                               clientArea.GetHeight() 
+                               * 
+                               self.level.getWidth() 
+                               / 
+                               self.level.getHeight(),
+                               
+                               # Set height
+                               clientArea.GetHeight())
+        
+        # Now create a backBuffer and stretch it to the correct size
+        # wx.Image has member functions that allows us to scale the image
+        stretchedImage = self.backBuffer.ConvertToImage()
+        stretchedImage = stretchedImage.Scale(stretchedSize.GetWidth(),
+                                              stretchedSize.GetHeight())
+        
+        # https://docs.wxpython.org/wx.MemoryDC.html
+        finalDC = wx.MemoryDC()
+        imageDC = wx.MemoryDC()
+        
+        finalDC.SelectObject(self.finalBackBuffer)
+        imageDC.SelectObject(stretchedImage.ConvertToBitmap())
+        
+        finalDC.SetBackground(wx.BLACK_BRUSH)
+        finalDC.Clear()
+        
+        center = wx.Point()
+        
+        center.x = (clientArea.GetWidth() - stretchedImage.GetWidth()) / 2
+        center.y = (clientArea.GetHeight() - stretchedImage.GetHeight()) / 2
+        
+        # Now copy the stretched image onto the final DC
+        #
+        # https://docs.wxpython.org/wx.MemoryDC.html
+        # Look for .Blit(), it is inherited from wx.DC
+        #
+        # https://docs.wxpython.org/wx.DC.html
+        # Copy from this DC to another DC
+        #finalDC.Blit( center,
+        #              stretchedSize,
+        #              imageDC,
+        #              wx.Point(0, 0))
+        finalDC.Blit( # xdest 
+                      center.x,
+                      
+                      # ydest
+                      center.y,
+                      
+                      # width
+                      stretchedSize.GetWidth(),
+                      
+                      # height
+                      stretchedSize.GetHeight(),
+                      
+                      # source
+                      imageDC,
+                      
+                      # xsrc 
+                      0,
+                      
+                      # ysrc
+                      0)
+        
+        # Draw a black border around
+        # Just want an outline. We don't want anything inside.
+        finalDC.SetBrush(wx.TRANSPARENT_BRUSH)
+        finalDC.DrawRectangle( wx.Point(0,0),
+                               clientArea )
+        
+        # CLEAR IT WHEN DONE!
+        imageDC.SelectObject(wx.NullBitmap)
+        finalDC.SelectObject(wx.NullBitmap)
+        
+    def flipBackBuffer(self):
+        
+        clientArea = self.gameWindow.GetClientSize()
+        
+        finalDC = wx.MemoryDC()
+        
+        screenDC = wx.ClientDC(self.gameWindow)
+        
+        finalDC.SelectObject(self.finalBackBuffer)
+        
+        
+        # .Blit()
+        # https://docs.wxpython.org/wx.DC.html#wx.DC.Blit
+        #screenDC.Blit( wx.Point(0, 0),
+        #               clientArea,
+        #               finalDC,
+        #               wx.Point(0, 0))
+        screenDC.Blit( # xdest 
+                      0,
+                      
+                      # ydest
+                      0,
+                      
+                      # width
+                      clientArea.x,
+                      
+                      # height
+                      clientArea.y,
+                      
+                      # source
+                      finalDC,
+                      
+                      # xsrc 
+                      0,
+                      
+                      # ysrc
+                      0)
+        
+        
+        finalDC.SelectObject(wx.NullBitmap)
     
 class CrazyApesPanel(wx.Panel):
     """

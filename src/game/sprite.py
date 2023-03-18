@@ -39,6 +39,11 @@ class Sprite(object):
         
         self.level = lvl
         
+        # Milliseconds delay
+        self.delay = 80
+        self.lastTime = 0
+        self.bUpdateSprite = False
+        
         #------------------
         # Member variables
         # (End)
@@ -131,8 +136,11 @@ class Sprite(object):
         self.erase(self.pos.x,
                    self.pos.y)
         
-        self.facingDirection.x = -100
-        self.facingDirection.y = -100
+        #self.facingDirection.x = -100
+        #self.facingDirection.y = -100
+        
+        self.facingDirection.x = -1
+        self.facingDirection.y = -1
         
         self.pos.x = x
         self.pos.y = y
@@ -144,3 +152,26 @@ class Sprite(object):
                  level):
         self.level = level
         
+    def setSpeed(self,
+                 new_speed):
+        """
+        This is just taking the speed and convert it to a delay.
+        If time - last time is greater than delay, update sprite
+        """
+        
+        # Speed is a value between 0 and 100. Not a direct correlation, 
+        # going to have to convert it.
+        #
+        # Max delay is 2000 milliseconds, minimum delay is 0
+        self.delay = int(2000 - (new_speed / 100.0) * 2000)
+        
+    def setCurrentTime(self,
+                       in_time):
+        if in_time - self.lastTime > self.delay:
+            self.lastTime = in_time
+            self.bUpdateSprite = True
+    
+    def updateSprite(self):
+        out = self.bUpdateSprite
+        self.bUpdateSprite = False
+        return out

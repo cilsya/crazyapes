@@ -106,7 +106,8 @@ class Level(object):
                   p):
         self.player = p
     
-    def update(self):
+    def update(self,
+               in_time):
         # Here is where we deal with fireballs moving and extra things
         
         # We keep sprites that are alive
@@ -114,7 +115,12 @@ class Level(object):
         
         # spr is a sprite
         for spr in level_data.NPC:
-            spr.idleUpdate()
+            
+            spr.setCurrentTime(in_time)
+            
+            # Now each sprite is timed on its own when it is time to update
+            if spr.updateSprite() == True:
+                spr.idleUpdate()
             
             if spr.isAlive() == True:
                 sprints_to_keep.append(spr)
@@ -145,7 +151,8 @@ class Level(object):
         pass
     
     def addEnemies(self,
-                   num):
+                   num,
+                   speed = 5):
         i = num
         
         while i > 0:
@@ -163,6 +170,9 @@ class Level(object):
                                    level_data.Enum_Entity.SPRITE_ENEMY,
                                    xpos,
                                    ypos)
+                
+                # Set the enemy speed
+                temp.setSpeed(speed)
                 
                 temp.addGoal(self.player)
                 self.addNPC(temp)

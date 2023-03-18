@@ -77,4 +77,7 @@ class Mage(character.Character):
                                   self.facingDirection.x,
                                   self.facingDirection.y)
         
+        # Draw it the first time
+        temp.draw(temp.pos.x,temp.pos.y)
+        
         self.level.addNPC(temp)
