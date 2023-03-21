@@ -1,5 +1,7 @@
 ### Setup
 
+#### From scratch
+
 - Create conda environment
 
 ```system
@@ -26,11 +28,31 @@ conda install -c anaconda pywin32
 conda install -c conda-forge wxpython
 ```
 
+- Install flake8 for linting
+
+```system
+conda install flake8
+```
+
+- Also install `importlib-metadata` manually if you are getting `ModuleNotFoundError: No module named 'importlib_metadata'` errors when trying to run `flake8 .`
+
+```system
+conda install importlib-metadata
+```
+
+- Install `nose2` for unit testing
+
+```system
+pip install nose2
+```
+
 - Export Conda Environment
 
 ```python
 conda env export > environment.yml
 ```
+
+#### Create Environment from `.yml` file on (This was made on Windows Platform)
 
 - Load Conda Environment
 
@@ -208,3 +230,98 @@ git log --graph --decorate --oneline
 
     - Update your master branch with the latest remote commits using the git fetch and git pull commands.
     Merge the branches by running the `git merge <your branch name here>` command.
+
+### Run unit tests
+- Using [nose](https://nose.readthedocs.io/en/latest/) to run tests
+- Tests are run using [unittest](https://docs.python.org/3/library/unittest.html)
+- Test are made next to the code with `_test` appended to them.
+- To run nose2:
+
+```system
+nose2 -v
+```
+
+### Run linters
+
+- To run flake8 on all files in subfolder
+
+```system
+flake8 .
+```
+
+
+```system
+flake8 ./
+```
+
+- To run flake8 on all files on a file
+
+```system
+flake8 <filename.py>
+```
+
+- To output flake8 to a text file
+
+```system
+flake8 . > flake8_fixes.txt
+```
+
+## Setup Nose2 for unit test
+
+- Can use `nose2.cfg` to configure (possibly ignore files to test) as illustrated in [this documentation.](https://docs.nose2.io/en/latest/usage.html#specifying-tests-to-run)
+
+## Setup flake8 for linting in VSCode
+
+- [Using Flake8 in VSCode](https://stackoverflow.com/questions/54160207/using-flake8-in-vscode)
+
+- [Open settings.json in VS Code](https://stackoverflow.com/questions/65908987/vs-code-how-to-open-settings-json-file)
+
+- To run Pylint
+
+Example:
+```system
+pylint <filename.py>
+```
+
+```system
+pylint rt_static.py
+```
+
+- [Linting Python in Visual Studio Code](https://code.visualstudio.com/docs/python/linting)
+
+# Setup developer documentation
+
+- [Auto-Generated Python Documentation with Sphinx (See comments for update fix](https://www.youtube.com/watch?v=b4iFyrLQQh4)
+
+- [How to Document using Sphinx: Introduction](https://www.youtube.com/watch?v=_xDgNKc6-AI)
+- [How to Document using Sphinx: Part 1—Setting up](https://www.youtube.com/watch?v=WcUhGT4rs5o)
+- [How to Document using Sphinx: Part 2—Building and Changing Themes](https://www.youtube.com/watch?v=RvJ54ADcVno)
+- [How to Document using Sphinx: Part 3—Formatting with reStructuredText](https://www.youtube.com/watch?v=DSIuLnoKLd8)
+- [How to Document using Sphinx: Part 4—Using Git to push docs to GitHub](https://www.youtube.com/watch?v=CqR1b0Y-o5k)
+- [Carol Willing - Practical Sphinx - PyCon 2018](https://www.youtube.com/watch?v=0ROZRNZkPS8)
+- [Bryson Tyrrell - Your code should document itself! Embedding documentation into your Python projects](https://www.youtube.com/watch?v=JQ8RQru-Y9Y)
+
+# Add column vertical ruler in VS Code
+- [Vertical rulers in Visual Studio Code](https://stackoverflow.com/questions/29968499/vertical-rulers-in-visual-studio-code)
+
+# Visual Studio Code open tab in new window
+- [Visual Studio Code open tab in new window](https://stackoverflow.com/questions/43362133/visual-studio-code-open-tab-in-new-window)
+
+- First press `Ctrl+K`,then release，then press `O` (the letter, not the
+number)
+
+# Epsilon with NumPy Arrays
+
+- Probably want to use [this version from the NumPy documentation](https://numpy.org/doc/stable/reference/generated/numpy.allclose.html)
+
+```python
+numpy.allclose(a, b, rtol=1e-05, atol=1e-08, equal_nan=False)
+```
+
+- [Stackoverflow explanation](https://stackoverflow.com/questions/10580676/comparing-two-numpy-arrays-for-equality-element-wise)
+
+```python
+np.array_equal(A,B)  # test if same shape, same elements values
+np.array_equiv(A,B)  # test if broadcastable shape, same elements values
+np.allclose(A,B,...) # test if same shape, elements have close enough values
+```
