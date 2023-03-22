@@ -1,16 +1,17 @@
-import drawEngine
+# import drawEngine
 import sprite
 import sprite_data
 
+
 class Character(sprite.Sprite):
-    
+
     def __init__(self,
                  # Level
                  lvl,
-                 
+
                  # Draw Engine
                  de,
-                 
+
                  s_index,
                  x=1,
                  y=1,
@@ -19,7 +20,7 @@ class Character(sprite.Sprite):
                  down_key="s",
                  left_key="a",
                  right_key="d"):
-        
+
         # Call the constructor of the parent class
         super(Character, self).__init__(lvl,
                                         de,
@@ -27,48 +28,48 @@ class Character(sprite.Sprite):
                                         x,
                                         y,
                                         lives)
-        
-        #------------------
+
+        # ------------------
         # Member variables
         # (Start)
-        #------------------
-        
+        # ------------------
+
         self.upKey = up_key
         self.downKey = down_key
         self.leftKey = left_key
         self.rightKey = right_key
-        
+
         self.classID = sprite_data.Enum.CHARACTER_CLASSID
-        
-        #------------------
+
+        # ------------------
         # Member variables
         # (End)
-        #------------------
-    
+        # ------------------
+
     def keyPress(self,
                  c):
         if c == self.upKey:
-            return self.move(0,-1)
-            
+            return self.move(0, -1)
+
         elif c == self.downKey:
             return self.move(0, 1)
-        
+
         elif c == self.rightKey:
             return self.move(1, 0)
-        
+
         elif c == self.leftKey:
             return self.move(-1, 0)
-        
+
         return False
-        
+
     def addLives(self,
                  num):
         self.numLives += num
-        
+
         # The character died (lost a life by adding -1 to its lives).
         # Reset the starting position of the character.
         if self.isAlive():
-            
+
             self.pos.x = 1
             self.pos.y = 1
             self.move(0, 0)
