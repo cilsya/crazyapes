@@ -232,14 +232,24 @@ git log --graph --decorate --oneline
     Merge the branches by running the `git merge <your branch name here>` command.
 
 ### Run unit tests
+
+- Quick answer for this code base
+    - All the unit tests are in the unittests folder
+```python
+nose2 -v -s src/unittests
+```
+
 - Using [nose](https://nose.readthedocs.io/en/latest/) to run tests
 - Tests are run using [unittest](https://docs.python.org/3/library/unittest.html)
-- Test are made next to the code with `_test` appended to them.
-- To run nose2:
+- Test are made next to the code with `_test` prepended to the function name.
+- When running `nose2` in the terminal, any file with the word `test` (i.e. `test_calculation.py`) will be checked for unit tests.
+- To run nose2 (in general):
 
 ```system
 nose2 -v
 ```
+
+- Look at the `nose2_help.txt` file saved at the root for help on how to use nose2.
 
 ### Run linters
 
