@@ -4,7 +4,6 @@
 import unittest
 
 # Custom modules
-# import ..game.character as clschk
 import character
 
 # ------------------------------ Imports (End) --------------------------------
