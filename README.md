@@ -335,3 +335,18 @@ np.array_equal(A,B)  # test if same shape, same elements values
 np.array_equiv(A,B)  # test if broadcastable shape, same elements values
 np.allclose(A,B,...) # test if same shape, elements have close enough values
 ```
+
+# Create Binary - Executable (Windows)
+
+- Install `pyinstaller`
+
+```system
+conda install -c conda-forge pyinstaller
+```
+
+- Navigate to `src/game`
+- In terminal, type
+
+```system
+pyinstaller --onefile --windowed CrazyApes.py
+```
